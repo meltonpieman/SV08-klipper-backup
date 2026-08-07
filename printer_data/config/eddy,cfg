@@ -1,4 +1,4 @@
-# LTERATIONS 26-08#06
+# ALTERATIONS 26-08-06
 # The MCU section only applies to the Eddy USB. For Eddy Coil you will use the MCU name of the toolboard that you connected the Eddy Coil to.
 [mcu eddy]
 #serial: /dev/serial/by-id/usb-Klipper_rp2040_eddy-if00 # This is the serial address of your eddy probe. This can be found by using the terminal of your klipper instance (typically through SSH) and using the command ```ls /dev/serial/by-id``` 
@@ -20,8 +20,8 @@ i2c_mcu: eddy  # This value is good for the Eddy USB but would need to be adjust
 i2c_bus: i2c0f # This value is good for the Eddy USB but would need to be adjusted for the Eddy Coil according to the I2C bus you have used.
 # Measure the offsets below using the method described here: https://www.klipper3d.org/Probe_Calibrate.html#calibrating-probe-x-and-y-offsets
 # For a standard Voron stealthburner X carriage mount there should be no need to change the defaults below.
-x_offset: 0
-y_offset: 21.42
+x_offset: -16 # was 0 26-08-06
+y_offset: 11.5 # was 21.42 26-08-06
 
 # This section is only relevant for Eddy USB. Comment it out for Eddy Coil.
 [temperature_probe btt_eddy]
