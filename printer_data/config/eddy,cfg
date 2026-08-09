@@ -1,4 +1,4 @@
-# ALTERATIONS 26-08-06 28-08-07
+# ALTERATIONS 26-08-06 28-08-07 
 # The MCU section only applies to the Eddy USB. For Eddy Coil you will use the MCU name of the toolboard that you connected the Eddy Coil to.
 [mcu eddy]
 #serial: /dev/serial/by-id/usb-Klipper_rp2040_eddy-if00 # This is the serial address of your eddy probe. This can be found by using the terminal of your klipper instance (typically through SSH) and using the command ```ls /dev/serial/by-id``` 
@@ -14,7 +14,8 @@ max_temp: 100 # Sets the maximum tempereature for eddys tempereature sensor to o
 
 [probe_eddy_current btt_eddy]
 sensor_type: ldc1612
-z_offset: 2.5
+#z_offset: 2.5 # 26-08-09
+descend_z: 2.5 # this replaced Z_offset in Klipper update 26-08-09
 #i2c_address:
 i2c_mcu: eddy  # This value is good for the Eddy USB but would need to be adjusted for the Eddy Coil according to the MCU you have used.
 i2c_bus: i2c0f # This value is good for the Eddy USB but would need to be adjusted for the Eddy Coil according to the I2C bus you have used.
@@ -22,6 +23,9 @@ i2c_bus: i2c0f # This value is good for the Eddy USB but would need to be adjust
 # For a standard Voron stealthburner X carriage mount there should be no need to change the defaults below.
 x_offset: -16 # was 0 26-08-06
 y_offset: 11.5 # was 21.42 26-08-06
+samples_result: median #26-08-09
+samples_tolerance: .005 #26-08-09
+samples_tolerance_retries: 3 #26-08-09
 
 # This section is only relevant for Eddy USB. Comment it out for Eddy Coil.
 [temperature_probe btt_eddy]
@@ -30,52 +34,65 @@ sensor_pin: eddy:gpio26
 horizontal_move_z: 3 # was 2 26-08-07
 
 [bed_mesh]
-horizontal_move_z: 2
-speed: 200
-
-# For the mesh dimensions below, the coordinates need to be reachable by the center of the probe. To calculate coordinates that will work, use the formula below:
-mesh_min: 15, 18  # modify these according to the above guide. If the probe cannot reach then you will get a klipper error when trying to scan a bed mesh. 26-08-06
-mesh_max: 335, 335 # modify these according to the above guide. If the probe cannot reach then you will get a klipper error when trying to scan a bed mesh. 26-08-06
-probe_count: 20, 20 # 26-08-06
+speed: 150 #500
+horizontal_move_z: 3 # was 3 26-08-06 tried 5 too high in mesh 26-08-08
+mesh_min: 15,18 # These min/max points are with the above linked Eddy mount on the stock toolhead.
+mesh_max: 335,335
+probe_count: 15,15 # 25,25 # Set to a lower 15,15 default as it appears a too high probe_count (too dense mesh) is bad with rapid_scan, see: https://www.klipper3d.org/Bed_Mesh.html#rapid-continuous-scanning
 algorithm: bicubic
+bicubic_tension: 0.5
+split_delta_z: 0.0125 # see: https://www.klipper3d.org/Bed_Mesh.html#move-splitting
+mesh_pps: 3,3
+adaptive_margin: 5
+fade_start: 1
+fade_end: 10
+fade_target: 0
+#scan_overshoot: 5  #uncomment this section if you still have room left over on the X axis for some scan overshoot to product smoother movements and more accurate scanning. Uncommenting this should be fine if you are using a standard voron mount.
 
-#scan_overshoot: 8  #uncomment this section if you still have room left over on the X axis for some scan overshoot to product smoother movements and more accurate scanning. Uncommenting this should be fine if you are using a standard voron mount.
-
-# Uncomment this if you are using Eddy as the probe AND the homing endstop
-[safe_z_home]
-home_xy_position: 175, 175 # 26-08-06
-z_hop: 10
-z_hop_speed: 25
-speed: 200
-
-# ------------------------------------------------------------------
-
-# [bed_mesh]
-# horizontal_move_z: 2
-# speed: 200
-# For the mesh dimensions below, the coordinates need to be reachable by the center of the probe. To calculate coordinates that will work, use the formula below:
-# mesh x min = position_min_x + greater_of (15mm or x_offset) <--- in this term, only consider the x offset if it is positive, ignore if negative.
-# mesh y min = position_min_y + greater_of (15mm or y_offset) <--- in this term, only consider the y offset if it is positive, ignore if negative.
-# mesh x max = position_max_x - greater_of (15mm or |x_offset|) <--- in this term, only consider the x offset if it is negative, ignore if positive.
-# mesh y max = position_max_y - greater_of (15mm or |y_offset|) <--- in this term, only consider the y offset if it is negative, ignore if positive.
-# Example: Consider that you have a 300 x 300 bed with the max x and y positions being 300 and the min being 0. Your probe offsets are -20 for X and 10 for Y
-# For mesh x min we ignore the x offset term because it is negative. Therefore mesh x min = 15
-# For mesh y min we do not ignore the y offset term because it is positive but it is less than 15 so we use 15. Therefore mesh y min = 15
-# For mesh x max we do not ignore the x offset term because it is negative. It is also greater than 15. Therefore mesh x max = 280
-# For mesh y max we ignore the y offset term because it is positive but it is less than 15 so we use 15. Therefore mesh y max = 285
-# The final result would be mesh_min: 15, 15 mesh_max: 280, 285
-# mesh_min: 10, 10  # modify these according to the above guide. If the probe cannot reach then you will get a klipper error when trying to scan a bed mesh.
-# mesh_max: 220, 220 # modify these according to the above guide. If the probe cannot reach then you will get a klipper error when trying to scan a bed mesh.
-# probe_count: 9, 9
-# algorithm: bicubic
-#scan_overshoot: 8  #uncomment this section if you still have room left over on the X axis for some scan overshoot to product smoother movements and more accurate scanning. Uncommenting this should be fine if you are using a standard voron mount.
-
+# COMMENTED FOR REFERENCE, WE NOW USE HOMING OVERRIDE BELOW
 # Uncomment this if you are using Eddy as the probe AND the homing endstop
 #[safe_z_home]
-#home_xy_position: 150, 150 # Choose an X,Y position that is in the center of your bed. For a 300x300 machine that will be 150, 150. Use the same principle to calculate your bed center.
+#home_xy_position: 175, 175 # 26-08-06
 #z_hop: 10
 #z_hop_speed: 25
 #speed: 200
+
+# THIS HOMING OVERRIDE ALWAYS GOES BACK TO CENTER FIRST BEFORE HOMING THE OTHER AXIS
+# THIS ALREADY INCLUDES THE EDDY HOMING OVERRIDES/CHANGES
+[homing_override]
+gcode:
+  # Move 5 up, just in case (this is our safety zhop, this needs 'set_position_z: 0' below)
+  G91 ; set relative positioning
+  G0 Z5 F1000 ; 5 up zhop
+  {% if not rawparams or 'Y' in rawparams %}
+    {action_respond_info('Homing Y')}
+    G28 Y
+    G90 ; set absolute positioning
+    G0 Y177.5 F6000 ; return to center
+    M400 ; Wait for move to finish
+  {% endif %}
+  {% if not rawparams or 'X' in rawparams %}
+    {action_respond_info('Homing X')}
+    G28 X
+    G90 ; set absolute positioning
+    G0 X177.5 F6000 ; return to center
+    M400 ; Wait for move to finish
+  {% endif %}
+  {% if not rawparams or 'Z' in rawparams %}
+    {action_respond_info('Homing Z')}
+    G90 ; set absolute positioning
+    G0 X177.5 Y177.5 F6000 ; return to center, please add your offsets manually if you want to
+    G28 Z
+    G0 Z10 F1000 ; move to z10 before probe
+    PROBE # Eddy needs a manual PROBE before calling the 'SET_Z_FROM_PROBE'
+    SET_Z_FROM_PROBE
+    G0 Z5 F1000 ; move to z5 to finish
+    M400 ; Wait for move to finish
+  {% endif %}
+  G90 ; set absolute positioning
+axes: xyz
+set_position_z: 0 # This forces the z position to be at 0 when we start homing, so we can move the Z up before homing.
+
 
 ###############################Macros and related################################
 #This secton contains macros and related config sections. Some should be used, others are optional. Read the comment above each one to find out whether or not to uncomment it for your installation.
